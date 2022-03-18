@@ -1,5 +1,5 @@
 mod app;
-mod data;
+// mod data;
 mod error;
 mod js;
 mod load_shader;

@@ -5,7 +5,7 @@ use crate::{Error, Result};
 
 pub enum WebGlDataKind {
     Attribute,
-    // Uniform,
+    Varying,
 }
 
 /// A WebGL attribute.
@@ -26,10 +26,11 @@ impl WebGlData {
         ctx: &WebGl2RenderingContext,
         prog: &WebGlProgram,
     ) -> Result<Self> {
-        use WebGlDataKind::Attribute;
+        use WebGlDataKind::{Attribute, Varying};
 
         let location_i32 = match kind {
             Attribute => ctx.get_attrib_location(prog, id),
+            Varying => ctx.get_,
         };
 
         let location = location_i32

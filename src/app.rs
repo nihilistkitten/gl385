@@ -52,6 +52,7 @@ fn create_program(context: &WebGl2RenderingContext) -> WebGlProgram {
 
 struct AttributeLocations {
     position: u32,
+    color: u32,
 }
 
 impl AttributeLocations {
@@ -61,7 +62,12 @@ impl AttributeLocations {
             .try_into()
             .map_err(|_| JsValue::from_str("position attribute not found"))?;
 
-        Ok(Self { position })
+        let color = context
+            .get_attrib_location(program, "color")
+            .try_into()
+            .map_err(|_| JsValue::from_str("color attribute not found"))?;
+
+        Ok(Self { position, color })
     }
 }
 
@@ -99,6 +105,21 @@ pub trait App: Sized + 'static {
 }
 
 fn draw(vertices: &[(f32, f32, f32)], context: &WebGl2RenderingContext, locs: &AttributeLocations) {
+    let colors = [
+        1.0, 0.0, 0.0, 1.0, // red
+        1.0, 0.0, 0.0, 1.0, // green
+        1.0, 0.0, 0.0, 1.0, // green
+        0.0, 1.0, 0.0, 1.0, // red
+        0.0, 1.0, 0.0, 1.0, // green
+        0.0, 1.0, 0.0, 1.0, // green
+    ];
+
+    let colors: Vec<_> = std::iter::repeat(colors.into_iter())
+        .flatten()
+        .take(vertices.len() * 4)
+        .collect();
+    log::error!("{:?}", &colors);
+
     let vertices = vertices
         .iter()
         .fold(Vec::with_capacity(vertices.len() * 3), |mut v, t| {
@@ -126,8 +147,20 @@ fn draw(vertices: &[(f32, f32, f32)], context: &WebGl2RenderingContext, locs: &A
         0,
     );
     context.enable_vertex_attrib_array(locs.position);
-
     context.bind_vertex_array(Some(&vao));
+
+    bind_buffer(context).unwrap();
+    fill_buffer(context, &colors);
+
+    context.vertex_attrib_pointer_with_i32(
+        locs.color,
+        4,
+        WebGl2RenderingContext::FLOAT,
+        false,
+        0,
+        0,
+    );
+    context.enable_vertex_attrib_array(locs.color);
 
     #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
     // vertices should be sufficiently small
