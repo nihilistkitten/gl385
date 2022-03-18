@@ -3,6 +3,7 @@ use std::rc::Rc;
 
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
+use web_sys::WebGlUniformLocation;
 use web_sys::{WebGl2RenderingContext, WebGlProgram};
 
 use crate::{bind_buffer, fill_buffer, make_shader_program, resize_canvas};
@@ -53,6 +54,7 @@ fn create_program(context: &WebGl2RenderingContext) -> WebGlProgram {
 struct AttributeLocations {
     position: u32,
     color: u32,
+    matrix: Option<WebGlUniformLocation>,
 }
 
 impl AttributeLocations {
@@ -67,7 +69,13 @@ impl AttributeLocations {
             .try_into()
             .map_err(|_| JsValue::from_str("color attribute not found"))?;
 
-        Ok(Self { position, color })
+        let matrix = context.get_uniform_location(program, "matrix");
+
+        Ok(Self {
+            position,
+            color,
+            matrix,
+        })
     }
 }
 
@@ -84,6 +92,8 @@ pub trait App: Sized + 'static {
 
         let locs = AttributeLocations::lookup(&context, &program)?;
 
+        let mut time = 0;
+
         // some stuff to get the borrow checker to let us meet the javascript api, this is kind of
         // janky but it's the best solution I can come up with. We need a clone of the
         // reference-counted function pointer so we can move one copy of the function into the
@@ -93,9 +103,12 @@ pub trait App: Sized + 'static {
         let size = resize_canvas();
 
         *frame_clone.borrow_mut() = Some(Closure::wrap(Box::new(move || {
+            time += 1;
+            log::error!("{}", time);
+
             if self.update() {
                 let vertices = self.render();
-                draw(&vertices, &context, &locs, size);
+                draw(&vertices, &context, &locs, size, time);
             }
             request_animation_frame(frame.borrow().as_ref().unwrap());
         }) as Box<dyn FnMut()>));
@@ -110,6 +123,7 @@ fn draw(
     context: &WebGl2RenderingContext,
     locs: &AttributeLocations,
     size: u32,
+    time: u32,
 ) {
     let colors = [
         1.0, 0.0, 0.0, 1.0, // red
@@ -167,6 +181,12 @@ fn draw(
     );
     context.enable_vertex_attrib_array(locs.color);
 
+    context.uniform_matrix4fv_with_f32_array(
+        locs.matrix.as_ref(),
+        false,
+        &rotation_matrix(time as f32 / 100.0),
+    );
+
     #[allow(clippy::cast_possible_truncation, clippy::cast_possible_wrap)]
     // vertices should be sufficiently small
     let vert_count = (vertices.len() / 3) as i32;
@@ -177,4 +197,25 @@ fn draw(
     context.viewport(0, 0, size as i32, size as i32);
 
     context.draw_arrays(WebGl2RenderingContext::TRIANGLES, 0, vert_count);
+}
+
+fn rotation_matrix(theta: f32) -> [f32; 16] {
+    [
+        theta.cos(),
+        0.0,
+        theta.sin(),
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        -theta.sin(),
+        0.0,
+        theta.cos(),
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+    ]
 }
