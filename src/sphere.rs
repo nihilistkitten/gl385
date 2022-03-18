@@ -20,12 +20,7 @@ impl Default for Sphere {
 
 impl App for Sphere {
     fn update(&mut self) -> bool {
-        if self.accessed {
-            false
-        } else {
-            self.accessed = true;
-            true
-        }
+        true
     }
 
     fn render(&self) -> Vec<(f32, f32, f32)> {

@@ -5,7 +5,6 @@ const PI: f32 = std::f32::consts::PI;
 pub struct Revolution {
     smoothness: u32,
     curve: Vec<(f32, f32)>,
-    accessed: bool,
 }
 
 impl App for Revolution {
@@ -37,8 +36,6 @@ impl App for Revolution {
             }
         }
 
-        log::error!("{:?}", &out);
-
         out
     }
 }
@@ -48,18 +45,14 @@ impl Revolution {
     pub fn new(curve: Vec<(f32, f32)>) -> Self {
         Self {
             smoothness: 24,
-            accessed: false,
             curve,
         }
     }
 
     #[must_use]
-    /// Produce the points of a curve from a function, evaluated samples times on [-1, 1].
+    /// Produce the points of a curve from a function, evaluated samples times on [0, 1].
     pub fn from_func(f: impl Fn(f32) -> (f32, f32), samples: i32) -> Self {
-        let lim = samples / 2;
-        let curve = (-lim..lim)
-            .map(|i| f(2.0 * i as f32 / samples as f32))
-            .collect();
+        let curve = (0..samples).map(|i| f(i as f32 / samples as f32)).collect();
         Self::new(curve)
     }
 

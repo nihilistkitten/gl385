@@ -104,7 +104,6 @@ pub trait App: Sized + 'static {
 
         *frame_clone.borrow_mut() = Some(Closure::wrap(Box::new(move || {
             time += 1;
-            log::error!("{}", time);
 
             if self.update() {
                 let vertices = self.render();
@@ -200,18 +199,19 @@ fn draw(
 }
 
 fn rotation_matrix(theta: f32) -> [f32; 16] {
+    // couldn't make rotation about the x or y axes work with the clip space stuff
     [
         theta.cos(),
-        0.0,
         theta.sin(),
         0.0,
         0.0,
-        1.0,
-        0.0,
-        0.0,
         -theta.sin(),
-        0.0,
         theta.cos(),
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
         0.0,
         0.0,
         0.0,
