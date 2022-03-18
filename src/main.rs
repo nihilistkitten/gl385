@@ -1,4 +1,4 @@
-use gl385::{App, Sphere};
+use gl385::{App, Revolution};
 use wasm_bindgen::JsValue;
 
 /* struct SphereApp {
@@ -19,6 +19,10 @@ impl App for SphereApp {
     }
 } */
 
+fn curve(i: f32) -> (f32, f32) {
+    (i, i * i)
+}
+
 fn main() -> Result<(), JsValue> {
-    Sphere::default().run()
+    Revolution::from_func(curve, 100).smoothness(100).run()
 }

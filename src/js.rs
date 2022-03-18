@@ -2,6 +2,7 @@
 
 use crate::{Error, Result};
 
+use wasm_bindgen::JsCast;
 use web_sys::WebGl2RenderingContext;
 
 /// Create and bind a buffer.
@@ -28,4 +29,27 @@ pub fn fill_buffer(context: &WebGl2RenderingContext, data: &[f32]) {
             WebGl2RenderingContext::STATIC_DRAW,
         );
     }
+}
+
+/// Resize the webgl canvas to fill the screen in a square. Returns the new size.
+pub fn resize_canvas() -> u32 {
+    let window = web_sys::window().expect("the current html has a window");
+
+    let canvas = window
+        .document()
+        .expect("the current window has a document")
+        .get_element_by_id("glcanvas")
+        .expect("the current document has an element with id glcanvas")
+        .dyn_into::<web_sys::HtmlCanvasElement>()
+        .unwrap();
+
+    let width = window.inner_width().unwrap().as_f64().unwrap() as u32;
+    let height = window.inner_height().unwrap().as_f64().unwrap() as u32;
+
+    let size = width.min(height);
+
+    canvas.set_width(size);
+    canvas.set_height(size);
+
+    size
 }

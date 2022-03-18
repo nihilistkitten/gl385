@@ -5,6 +5,7 @@ const PI: f32 = std::f32::consts::PI;
 pub struct Sphere {
     smoothness: u32,
     radius: f32,
+    accessed: bool,
 }
 
 impl Default for Sphere {
@@ -12,24 +13,30 @@ impl Default for Sphere {
         Self {
             smoothness: 24,
             radius: 1.0,
+            accessed: false,
         }
     }
 }
 
 impl App for Sphere {
     fn update(&mut self) -> bool {
-        true
+        if self.accessed {
+            false
+        } else {
+            self.accessed = true;
+            true
+        }
     }
 
     fn render(&self) -> Vec<(f32, f32, f32)> {
         let mut out = vec![];
         for i in 0..self.smoothness {
-            let theta = self.theta(i);
-            let theta_next = self.theta(i + 1);
+            let theta = self.normalize_tau(i);
+            let theta_next = self.normalize_tau(i + 1);
 
             for j in 0..self.smoothness {
-                let phi = self.phi(j);
-                let phi_next = self.phi(j + 1);
+                let phi = self.normalize_pi(j);
+                let phi_next = self.normalize_pi(j + 1);
 
                 let p0 = self.polar_projection(theta, phi);
                 let p1 = self.polar_projection(theta, phi_next);
@@ -78,12 +85,12 @@ impl Sphere {
     }
 
     /// Given a parametrized i, return the corresponding theta in radians.
-    fn theta(&self, i: u32) -> f32 {
+    fn normalize_tau(&self, i: u32) -> f32 {
         i as f32 / self.smoothness as f32 * 2.0 * PI
     }
 
     /// Given a parametrized i, return the corresponding phi in radians.
-    fn phi(&self, j: u32) -> f32 {
+    fn normalize_pi(&self, j: u32) -> f32 {
         j as f32 / self.smoothness as f32 * PI
     }
 }

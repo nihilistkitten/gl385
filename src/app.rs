@@ -5,7 +5,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{WebGl2RenderingContext, WebGlProgram};
 
-use crate::{bind_buffer, fill_buffer, make_shader_program};
+use crate::{bind_buffer, fill_buffer, make_shader_program, resize_canvas};
 
 fn request_animation_frame(f: &Closure<dyn FnMut()>) {
     web_sys::window()
@@ -90,11 +90,12 @@ pub trait App: Sized + 'static {
         // closure for the recursive call.
         let frame = Rc::new(RefCell::new(None));
         let frame_clone = frame.clone();
+        let size = resize_canvas();
 
         *frame_clone.borrow_mut() = Some(Closure::wrap(Box::new(move || {
             if self.update() {
                 let vertices = self.render();
-                draw(&vertices, &context, &locs);
+                draw(&vertices, &context, &locs, size);
             }
             request_animation_frame(frame.borrow().as_ref().unwrap());
         }) as Box<dyn FnMut()>));
@@ -104,7 +105,12 @@ pub trait App: Sized + 'static {
     }
 }
 
-fn draw(vertices: &[(f32, f32, f32)], context: &WebGl2RenderingContext, locs: &AttributeLocations) {
+fn draw(
+    vertices: &[(f32, f32, f32)],
+    context: &WebGl2RenderingContext,
+    locs: &AttributeLocations,
+    size: u32,
+) {
     let colors = [
         1.0, 0.0, 0.0, 1.0, // red
         1.0, 0.0, 0.0, 1.0, // green
@@ -118,7 +124,6 @@ fn draw(vertices: &[(f32, f32, f32)], context: &WebGl2RenderingContext, locs: &A
         .flatten()
         .take(vertices.len() * 4)
         .collect();
-    log::error!("{:?}", &colors);
 
     let vertices = vertices
         .iter()
@@ -168,6 +173,8 @@ fn draw(vertices: &[(f32, f32, f32)], context: &WebGl2RenderingContext, locs: &A
 
     context.clear_color(0.0, 0.0, 0.0, 1.0);
     context.clear(WebGl2RenderingContext::COLOR_BUFFER_BIT);
+
+    context.viewport(0, 0, size as i32, size as i32);
 
     context.draw_arrays(WebGl2RenderingContext::TRIANGLES, 0, vert_count);
 }
