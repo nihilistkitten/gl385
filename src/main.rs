@@ -1,4 +1,4 @@
-use reedcg::{App, Sphere};
+use gl385::{App, Sphere};
 use wasm_bindgen::JsValue;
 
 /* struct SphereApp {
